@@ -5,4 +5,4 @@ ENV NODE_ENV=production
 WORKDIR /app
 COPY --chown=node:node . .
 USER node
-CMD ["node", "--enable-source-maps", "dist/index.js"]
+CMD ["node", "--enable-source-maps", "--import", "newrelic/esm-loader.mjs", "-r", "newrelic", "dist/index.js"]
