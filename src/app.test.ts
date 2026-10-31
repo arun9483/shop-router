@@ -1,9 +1,12 @@
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import express from 'express';
+import newrelic from 'newrelic';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp, mfeRoutes } from './app.js';
+
+vi.mock('newrelic', () => ({ default: { setTransactionName: vi.fn() } }));
 
 const servers: Server[] = [];
 
@@ -56,6 +59,29 @@ describe('router', () => {
   ])('routes %s to %s', async (path, name) => {
     const res = await request(router).get(path);
     expect(res.body).toMatchObject({ name, path });
+  });
+
+  describe('transaction names', () => {
+    const setTransactionName = vi.mocked(newrelic.setTransactionName);
+
+    beforeEach(() => {
+      setTransactionName.mockClear();
+    });
+
+    it.each([
+      ['/api/catalog/products/mug', 'api/catalog'],
+      ['/api/catalog?page=2', 'api/catalog'],
+      ['/api/shell/greeting', 'api/shell'],
+      ['/api/catalogue', 'api/shell'],
+    ])('names %s %s', async (path, name) => {
+      await request(router).get(path);
+      expect(setTransactionName).toHaveBeenCalledExactlyOnceWith(name);
+    });
+
+    it('leaves everything outside the API alone', async () => {
+      await request(router).get('/mfe/catalog/entry.js');
+      expect(setTransactionName).not.toHaveBeenCalled();
+    });
   });
 
   it('passes trace headers through unchanged', async () => {

@@ -24,6 +24,9 @@ importers:
       '@types/express':
         specifier: 5.0.6
         version: 5.0.6
+      '@types/newrelic':
+        specifier: 9.14.8
+        version: 9.14.8
       '@types/node':
         specifier: 24.19.2
         version: 24.19.2
@@ -592,6 +595,9 @@ packages:
 
   '@types/methods@1.1.4':
     resolution: {integrity: sha512-ymXWVrDiCxTBE3+RIrrP533E70eA+9qu7zdWoHuOmGujkYtzf4HQF96b8nwHLqhuf4ykX61IGRIB38CC6/sImQ==}
+
+  '@types/newrelic@9.14.8':
+    resolution: {integrity: sha512-rkOTEVR7Lui4TTEykDUxIxCbFkcI/yw3C8URLOWM84zjuHh9W35RAequHTEvGBbbrLCdn43FVTHMLji4uunDWQ==}
 
   '@types/node@24.19.2':
     resolution: {integrity: sha512-93d49wCWJkCyN87MxLpNN6KXPCwFw7bVUg79mGUV1OS40JGWwVCr8n61DXCSqz7CV6/VfPkb7xec7uP2M+QHWQ==}
@@ -2359,6 +2365,8 @@ snapshots:
   '@types/json-schema@7.0.15': {}
 
   '@types/methods@1.1.4': {}
+
+  '@types/newrelic@9.14.8': {}
 
   '@types/node@24.19.2':
     dependencies:

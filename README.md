@@ -22,7 +22,8 @@ Shell.
 ## Tracing
 
 The router runs the New Relic Node agent, as `shop-router`, so it appears in a trace between the
-browser and each FES. Only API calls are traced. Set `NEW_RELIC_ENABLED=false` to turn it off.
+browser and each FES. Only API calls are traced, named by unit: `api/catalog`, `api/cart` and
+`api/shell`. Set `NEW_RELIC_ENABLED=false` to turn it off.
 
 ## Check
 
