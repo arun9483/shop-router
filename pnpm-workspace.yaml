@@ -5,3 +5,7 @@ minimumReleaseAge: 1440
 
 allowBuilds:
   esbuild: true
+  # Optional New Relic native add-ons (CPU and GC metrics); the agent works without them.
+  '@newrelic/fn-inspect': false
+  '@newrelic/native-metrics': false
+  protobufjs: false

@@ -1,9 +1,15 @@
 import express, { type Express } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import newrelic from 'newrelic';
 
 export interface Route {
   name: string;
   url: string;
+}
+
+/** Whether `path`, which may carry a query, is `prefix` or anything under it. */
+function isUnder(path: string, prefix: string): boolean {
+  return path === prefix || path.startsWith(`${prefix}/`) || path.startsWith(`${prefix}?`);
 }
 
 /** Reads every `MFE_<NAME>_URL` variable, e.g. `MFE_CATALOG_URL` gives the route `catalog`. */
@@ -28,16 +34,21 @@ export function createApp(shellUrl: string, mfes: Route[]): Express {
     res.sendStatus(404);
   });
 
+  // A proxied request matches no Express route, so the agent would name every one `GET//`. Names
+  // are per unit, never per URL, so public requests cannot create new ones.
+  app.use('/api', (req, _res, next) => {
+    const mfe = mfes.find(({ name }) => isUnder(req.originalUrl, `/api/${name}`));
+    newrelic.setTransactionName(`api/${mfe?.name ?? 'shell'}`);
+    next();
+  });
+
   for (const { name, url } of mfes) {
     app.use(
       createProxyMiddleware({
         target: url,
         xfwd: true,
         pathFilter: (path) =>
-          [`/mfe/${name}`, `/api/${name}`].some(
-            (prefix) =>
-              path === prefix || path.startsWith(`${prefix}/`) || path.startsWith(`${prefix}?`),
-          ),
+          [`/mfe/${name}`, `/api/${name}`].some((prefix) => isUnder(path, prefix)),
       }),
     );
   }

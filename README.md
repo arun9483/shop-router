@@ -19,6 +19,12 @@ Copy `.env.example` to `.env` to change its settings. `SHELL_URL` is the Shell's
 `MFE_<NAME>_URL` is an MFE's FES. Point one at another build to swap that MFE without touching the
 Shell.
 
+## Tracing
+
+The router runs the New Relic Node agent, as `shop-router`, so it appears in a trace between the
+browser and each FES. Only API calls are traced, named by unit: `api/catalog`, `api/cart` and
+`api/shell`. Set `NEW_RELIC_ENABLED=false` to turn it off.
+
 ## Check
 
 ```sh
