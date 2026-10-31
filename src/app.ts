@@ -1,6 +1,7 @@
 import express, { type Express } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import newrelic from 'newrelic';
+import { healthRouter, type HealthOptions } from './health.js';
 
 export interface Route {
   name: string;
@@ -23,13 +24,14 @@ export function mfeRoutes(env: NodeJS.ProcessEnv): Route[] {
 /**
  * The one public origin, as a CDN would be in production: `/mfe/<name>[/*]` and `/api/<name>[/*]` go
  * to that MFE's FES and everything else to the Shell's FES. Requests and headers, trace headers
- * included, pass through unchanged.
+ * included, pass through unchanged. With `health`, it also answers health and version.
  */
-export function createApp(shellUrl: string, mfes: Route[]): Express {
+export function createApp(shellUrl: string, mfes: Route[], health?: HealthOptions): Express {
   const app = express();
   app.disable('x-powered-by');
 
-  // Health and version checks go to each server's own port, never through the router.
+  if (health) app.use(healthRouter(shellUrl, mfes, health));
+  // These paths never reach a unit: each FES answers its own on its own port.
   app.use(['/health', '/version'], (_req, res) => {
     res.sendStatus(404);
   });
