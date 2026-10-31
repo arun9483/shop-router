@@ -1,0 +1,7 @@
+saveExact: true
+
+# Supply-chain buffer: a version is installed only once it is a day old (pnpm 11's default).
+minimumReleaseAge: 1440
+
+allowBuilds:
+  esbuild: true

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+.env
+*.log
+test-results/
+playwright-report/
+.DS_Store
+*.tsbuildinfo
+*.tgz
