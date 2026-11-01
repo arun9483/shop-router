@@ -44,16 +44,21 @@ export function createApp(shellUrl: string, mfes: Route[], health?: HealthOption
     next();
   });
 
+  // A new connection per request. Reused connections would stay on the pod they first reached, so
+  // one pod of a unit would take most of its traffic and a new pod would get none.
+  const agent = false;
+
   for (const { name, url } of mfes) {
     app.use(
       createProxyMiddleware({
         target: url,
+        agent,
         xfwd: true,
         pathFilter: (path) =>
           [`/mfe/${name}`, `/api/${name}`].some((prefix) => isUnder(path, prefix)),
       }),
     );
   }
-  app.use(createProxyMiddleware({ target: shellUrl, xfwd: true }));
+  app.use(createProxyMiddleware({ target: shellUrl, agent, xfwd: true }));
   return app;
 }

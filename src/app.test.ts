@@ -14,7 +14,12 @@ const servers: Server[] = [];
 async function upstream(name: string): Promise<string> {
   const app = express();
   app.use((req, res) => {
-    res.json({ name, path: req.originalUrl, traceparent: req.get('traceparent') ?? null });
+    res.json({
+      name,
+      path: req.originalUrl,
+      traceparent: req.get('traceparent') ?? null,
+      connection: req.get('connection') ?? null,
+    });
   });
   const server = app.listen(0);
   servers.push(server);
@@ -82,6 +87,11 @@ describe('router', () => {
       await request(router).get('/mfe/catalog/entry.js');
       expect(setTransactionName).not.toHaveBeenCalled();
     });
+  });
+
+  it('opens a new connection per request, so each can reach any pod', async () => {
+    const res = await request(router).get('/api/catalog/products');
+    expect((res.body as { connection: string }).connection).toBe('close');
   });
 
   it('passes trace headers through unchanged', async () => {
