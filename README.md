@@ -46,8 +46,19 @@ in `checks` for each unit. `status`, `version`, `releaseId` and `serviceId` are 
 server in the shop, and `/health/units/<name>` relays the unit's own answer. There is no equivalent standard for version endpoints: `/version` follows
 the common shape of name, SemVer version, commit and ISO 8601 build time.
 
-Units are found from `SHELL_URL` and `MFE_<NAME>_URL`. Each FES gets 1 s to answer, and answers are
+Units are found from `SHELL_URL` and `MFE_<NAME>_URL`. Each FES gets `HEALTH_UNIT_TIMEOUT_MS` (1 s by
+default) to answer, and answers are
 reused for 3 s. A backend that is down shows in its FES's readiness.
+
+## Deploy
+
+`.github/workflows/deploy-staging.yml` deploys the router to staging on Cloud Run: on every push to `main`
+after the checks pass, or by hand (**Actions → Deploy to staging → Run workflow**). It reads each FES's URL
+from Cloud Run, so deploy every unit first. The router is public there, and the Cloudflare Worker in
+`shop-shell/edge/` forwards the shop's public origin to it.
+
+The workflow reads repository variables `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_WIF_PROVIDER` and
+`GCP_DEPLOYER`. No Google key is stored: GitHub Actions signs in with workload identity federation.
 
 ## Check
 
