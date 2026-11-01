@@ -8,7 +8,10 @@ const mfes = mfeRoutes(process.env);
 const health =
   process.env.HEALTH_ENDPOINTS_ENABLED === 'false'
     ? undefined
-    : { version: readVersion(import.meta.dirname) };
+    : {
+        version: readVersion(import.meta.dirname),
+        unitTimeoutMs: Number(process.env.HEALTH_UNIT_TIMEOUT_MS ?? 1000),
+      };
 
 const server = createApp(shellUrl, mfes, health).listen(port, () => {
   console.log(`router on http://localhost:${port}`);

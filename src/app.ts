@@ -45,20 +45,20 @@ export function createApp(shellUrl: string, mfes: Route[], health?: HealthOption
   });
 
   // A new connection per request. Reused connections would stay on the pod they first reached, so
-  // one pod of a unit would take most of its traffic and a new pod would get none.
-  const agent = false;
+  // one pod of a unit would take most of its traffic and a new pod would get none. The target's own
+  // host, because hosts like Cloud Run find the service by it; X-Forwarded-Host keeps the public one.
+  const proxy = { agent: false, changeOrigin: true, xfwd: true };
 
   for (const { name, url } of mfes) {
     app.use(
       createProxyMiddleware({
+        ...proxy,
         target: url,
-        agent,
-        xfwd: true,
         pathFilter: (path) =>
           [`/mfe/${name}`, `/api/${name}`].some((prefix) => isUnder(path, prefix)),
       }),
     );
   }
-  app.use(createProxyMiddleware({ target: shellUrl, agent, xfwd: true }));
+  app.use(createProxyMiddleware({ ...proxy, target: shellUrl }));
   return app;
 }

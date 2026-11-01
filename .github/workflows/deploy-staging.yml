@@ -1,0 +1,123 @@
+# Deploys the router to staging on Cloud Run. Each FES's URL is read from Cloud Run, so every unit must
+# be deployed first. Every identifier comes from repository variables.
+name: Deploy to staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  # Workload identity federation: GitHub's OIDC token is exchanged for short-lived Google credentials.
+  id-token: write
+
+env:
+  ENVIRONMENT: staging
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/setup@v3
+        with:
+          node-version-file: false
+          install: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  deploy:
+    needs: check
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      REGION: ${{ vars.GCP_REGION }}
+      PROJECT: ${{ vars.GCP_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/setup@v3
+        with:
+          node-version-file: false
+          install: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER }}
+      - uses: google-github-actions/setup-gcloud@v3.0.1
+
+      - name: Build and push the image
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          deploy/build.sh
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          image="$REGION-docker.pkg.dev/$PROJECT/shop/shop-router:$GITHUB_SHA"
+          docker tag "shop-router:$GITHUB_SHA" "$image"
+          docker push --quiet "$image"
+
+      # Settings go through a file: some values (New Relic's ignore rules) contain commas. Units sleep
+      # when idle here, so a health check waits for one to wake.
+      - name: Deploy the router (public)
+        run: |
+          service="shop-router-$ENVIRONMENT"
+          fes() {
+            gcloud run services describe "$1-fes-$ENVIRONMENT" --project "$PROJECT" --region "$REGION" \
+              --format 'value(status.url)'
+          }
+          cat > router-env.yaml <<ENV
+          SHELL_URL: "$(fes shell)"
+          MFE_CATALOG_URL: "$(fes catalog)"
+          MFE_CART_URL: "$(fes cart)"
+          HEALTH_UNIT_TIMEOUT_MS: "8000"
+          NEW_RELIC_ENABLED: "true"
+          NEW_RELIC_APP_NAME: "$service"
+          NEW_RELIC_NO_CONFIG_FILE: "true"
+          NEW_RELIC_LOG: "stdout"
+          NEW_RELIC_LOG_LEVEL: "warn"
+          NEW_RELIC_DISTRIBUTED_TRACING_ENABLED: "true"
+          NEW_RELIC_IGNORING_RULES: "^/(?!api/)"
+          NEW_RELIC_ERROR_COLLECTOR_IGNORE_ERROR_CODES: "404,500"
+          NEW_RELIC_DISTRIBUTED_TRACING_SAMPLER_REMOTE_PARENT_SAMPLED: "always_on"
+          ENV
+          gcloud run deploy "$service" --project "$PROJECT" --region "$REGION" --quiet \
+            --image "$REGION-docker.pkg.dev/$PROJECT/shop/shop-router:$GITHUB_SHA" \
+            --service-account "shop-router@$PROJECT.iam.gserviceaccount.com" \
+            --allow-unauthenticated --min-instances 0 --max-instances 1 \
+            --env-vars-file router-env.yaml \
+            --set-secrets NEW_RELIC_LICENSE_KEY=new-relic-license-key:latest
+          url=$(gcloud run services describe "$service" --project "$PROJECT" --region "$REGION" \
+            --format 'value(status.url)')
+          echo "ROUTER_URL=$url" >> "$GITHUB_ENV"
+
+      - name: Check the deployed router
+        run: |
+          failed=0
+          for path in /health/ready /health/units / /catalog /api/shell/greeting /api/catalog/products \
+            /api/cart /mfe/catalog/entry.js /mfe/cart/entry.js; do
+            status=000
+            for attempt in 1 2 3 4 5 6; do
+              status=$(curl -s -o /dev/null -w '%{http_code}' "$ROUTER_URL$path" || true)
+              [ "$status" = 200 ] && break
+              sleep 10
+            done
+            echo "$path -> $status"
+            [ "$status" = 200 ] || failed=1
+          done
+          exit $failed

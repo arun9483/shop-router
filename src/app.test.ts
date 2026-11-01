@@ -19,6 +19,8 @@ async function upstream(name: string): Promise<string> {
       path: req.originalUrl,
       traceparent: req.get('traceparent') ?? null,
       connection: req.get('connection') ?? null,
+      host: req.get('host'),
+      forwardedHost: req.get('x-forwarded-host'),
     });
   });
   const server = app.listen(0);
@@ -87,6 +89,13 @@ describe('router', () => {
       await request(router).get('/mfe/catalog/entry.js');
       expect(setTransactionName).not.toHaveBeenCalled();
     });
+  });
+
+  it('sends the target its own host and keeps the public one', async () => {
+    const res = await request(router).get('/api/catalog/products').set('Host', 'shop.example');
+    const { host, forwardedHost } = res.body as { host: string; forwardedHost: string };
+    expect(host).toMatch(/^localhost:\d+$/);
+    expect(forwardedHost).toBe('shop.example');
   });
 
   it('opens a new connection per request, so each can reach any pod', async () => {
