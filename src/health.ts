@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { Router, type Response, type Router as ExpressRouter } from 'express';
+import { Router, type RequestHandler, type Response, type Router as ExpressRouter } from 'express';
+import { problemHandler } from './problem.js';
 import type { Route } from './app.js';
 
 export interface VersionInfo {
@@ -16,6 +17,11 @@ export interface HealthOptions {
   unitTimeoutMs?: number;
   /** How long a unit's answer is reused, so public callers cannot multiply calls to every FES. */
   cacheMs?: number;
+  /**
+   * MVP-2, `HEALTH_UNITS_AUTH=true`: checks the operator token on `/health/units*` and
+   * `/version/units*`. The router's own health and version stay public.
+   */
+  unitsGuard?: RequestHandler;
 }
 
 /** Reads the `version.json` that `scripts/write-version.mjs` puts next to the compiled output. */
@@ -56,7 +62,7 @@ function sendHealth(res: Response, code: number, body: object): void {
 export function healthRouter(
   shellUrl: string,
   mfes: Route[],
-  { version, unitTimeoutMs = 1000, cacheMs = 3000 }: HealthOptions,
+  { version, unitTimeoutMs = 1000, cacheMs = 3000, unitsGuard }: HealthOptions,
 ): ExpressRouter {
   const call = (url: string) => fetch(url, { signal: AbortSignal.timeout(unitTimeoutMs) });
 
@@ -81,6 +87,7 @@ export function healthRouter(
   const all = [...units];
 
   const router = Router();
+  if (unitsGuard) router.use(['/health/units', '/version/units'], unitsGuard);
   router.use((_req, res, next) => {
     res.set('Cache-Control', 'no-store');
     next();
@@ -148,5 +155,7 @@ export function healthRouter(
     res.status(info ? 200 : 503).json(info ?? { status: 'fail' });
   });
 
+  // A refused operator token answers as problem+json, like every API error in the shop.
+  if (unitsGuard) router.use(problemHandler);
   return router;
 }
