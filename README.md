@@ -50,6 +50,20 @@ Units are found from `SHELL_URL` and `MFE_<NAME>_URL`. Each FES gets `HEALTH_UNI
 default) to answer, and answers are
 reused for 3 s. A backend that is down shows in its FES's readiness.
 
+### Operator token (MVP-2)
+
+With `HEALTH_UNITS_AUTH=true`, `/health/units*` and `/version/units*` need a service access token with
+`shop-router` in `aud` and the `ops` role, which `keycloak/grants.yaml` grants to the operator's caller
+`shop-ops`: `401` without a valid one, `403` without the role, as problem+json. The router's own
+`/health/live`, `/health/ready` and `/version` stay public. Off by default, and off on staging. It needs
+`OIDC_ISSUER_URL` and `OIDC_INTERNAL_URL`; `src/auth/` is the same code as every unit's `server-common`.
+
+```sh
+token=$(curl -sk https://shop.test:8443/realms/shop/protocol/openid-connect/token \
+  -d grant_type=client_credentials -d client_id=shop-ops -d client_secret="$SHOP_OPS_SECRET" | jq -r .access_token)
+curl -k -H "Authorization: Bearer $token" https://shop.test/health/units
+```
+
 ## Deploy
 
 `.github/workflows/deploy-staging.yml` deploys the router to staging on Cloud Run: on every push to `main`

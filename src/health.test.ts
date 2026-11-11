@@ -1,10 +1,11 @@
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import express from 'express';
+import express, { type RequestHandler } from 'express';
 import request from 'supertest';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { createApp } from './app.js';
 import { readVersion } from './health.js';
+import { HttpError } from './problem.js';
 
 vi.mock('newrelic', () => ({ default: { setTransactionName: vi.fn() } }));
 
@@ -210,5 +211,27 @@ describe('/version/units/<name>', () => {
 describe('readVersion', () => {
   it('falls back when there is no version.json', () => {
     expect(readVersion('/no/such/folder').name).toBe('unknown');
+  });
+});
+
+describe('operator token on unit health (MVP-2)', () => {
+  it("guards /health/units* and /version/units*, never the router's own health", async () => {
+    const refuse: RequestHandler = () => {
+      throw new HttpError(401, 'A service access token is required');
+    };
+    const app = createApp('http://localhost:1', [], { version, unitsGuard: refuse });
+    for (const path of [
+      '/health/units',
+      '/health/units/shell',
+      '/version/units',
+      '/version/units/shell',
+    ]) {
+      const res = await request(app).get(path);
+      expect(res.status, path).toBe(401);
+      expect(res.headers['content-type'], path).toMatch(/^application\/problem\+json/);
+    }
+    for (const path of ['/health/live', '/health/ready', '/version']) {
+      expect((await request(app).get(path)).status, path).toBe(200);
+    }
   });
 });
