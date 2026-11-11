@@ -71,3 +71,10 @@ pnpm test
 
 The end-to-end tests live in `shop-shell` and start this repository from next to it, or from
 `SHOP_ROUTER_DIR`.
+
+## Identity provider settings
+
+`keycloak/shop-router.yaml` holds this repository's settings in the shop's identity provider (Keycloak realm `shop`):
+the `shop-router` client, which holds the `ops` role for `/health/units*` and `/version/units*`, and grants it to the operator's caller. [shop-mfe-platform](https://github.com/arun9483/shop-mfe-platform) applies it on Docker when single
+sign-on runs, together with every other repository's file. Roles are granted through this repository's own groups. `keycloak/grants.yaml` grants the role to the operator's caller. It has no secret. Nothing in this repository reads it yet; see
+[MVP-2](https://github.com/arun9483/arun-mfe-platform/blob/main/docs/mvp-2-sso.md).

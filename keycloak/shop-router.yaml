@@ -1,0 +1,23 @@
+# The router's settings in the shop's identity provider (Keycloak realm `shop`), applied by
+# shop-mfe-platform's settings importer (keycloak-config-cli).
+realm: shop
+
+clients:
+  # The audience of operator tokens and the holder of the ops role. Never signs anyone in.
+  - clientId: shop-router
+    protocol: openid-connect
+    bearerOnly: true
+
+roles:
+  client:
+    shop-router:
+      - name: ops
+        description: May read /health/units* and /version/units*
+
+# The role is granted through the router's own group, in grants.yaml.
+groups:
+  - name: shop-router
+    subGroups:
+      - name: ops
+        clientRoles:
+          shop-router: [ops]
