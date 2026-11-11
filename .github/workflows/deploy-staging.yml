@@ -5,6 +5,8 @@ name: Deploy to staging
 on:
   push:
     branches: [main]
+    # IdP settings are applied by shop-mfe-platform on Docker; staging has no IdP yet.
+    paths-ignore: ['keycloak/**']
   workflow_dispatch:
 
 concurrency:
