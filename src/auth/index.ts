@@ -8,6 +8,11 @@ export {
 } from './token.js';
 export { IdpUnavailableError, type IdpAdapter, type IdpUser } from './idp/adapter.js';
 export { keycloakAdapter } from './idp/keycloak.js';
+export {
+  checkAdapterContract,
+  checkUnavailableContract,
+  type ContractFixtures,
+} from './idp/contract.js';
 export { TtlCache } from './cache.js';
 export {
   COOKIES,

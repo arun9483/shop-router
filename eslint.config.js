@@ -25,6 +25,28 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
+  // MVP-2, ADR 0004: only the IdP adapter knows Keycloak. Its endpoints and claim names are refused
+  // everywhere else; tests may use them to build tokens.
+  {
+    files: ['**/*.{ts,tsx}'],
+    ignores: ['**/auth/idp/keycloak.ts', '**/*.test.ts', '**/*.test.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Literal[value=/resource_access|realm_access|\\/admin\\/realms|kc-admin-api/]',
+          message:
+            'Keycloak-specific: only server-common/src/auth/idp/keycloak.ts may use it (ADR 0004).',
+        },
+        {
+          selector:
+            'TemplateElement[value.raw=/resource_access|realm_access|\\/admin\\/realms|kc-admin-api/]',
+          message:
+            'Keycloak-specific: only server-common/src/auth/idp/keycloak.ts may use it (ADR 0004).',
+        },
+      ],
+    },
+  },
   {
     files: ['**/*.{js,mjs}'],
     extends: [tseslint.configs.disableTypeChecked],

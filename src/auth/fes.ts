@@ -101,7 +101,7 @@ export function fesGate({
   }
 
   function guard(
-    onRefused: (req: Request, res: Response, status: 401 | 403) => void,
+    onRefused: (req: Request, res: Response, status: 401 | 403 | 503) => void,
   ): RequestHandler {
     return async (req, res, next) => {
       let answer: GateAnswer;
@@ -109,9 +109,10 @@ export function fesGate({
         answer = await check(req, res);
       } catch (error) {
         res.set('Cache-Control', 'no-store');
-        if (error instanceof IdpUnavailableError)
-          throw new HttpError(503, 'Login cannot be checked now');
-        throw error;
+        if (!(error instanceof IdpUnavailableError)) throw error;
+        // Fail closed: the IdP or the backend cannot answer, so the request is not let through.
+        onRefused(req, res, 503);
+        return;
       }
       if (answer.status === 200) {
         next();
@@ -128,13 +129,28 @@ export function fesGate({
         res.redirect(302, loginUrl(req));
         return;
       }
+      if (status === 503) {
+        res
+          .status(503)
+          .type('html')
+          .send(
+            '<!doctype html><title>Try again shortly</title>' +
+              '<p>Login cannot be checked right now. Try again shortly.</p>',
+          );
+        return;
+      }
       res
         .status(403)
         .type('html')
         .send('<!doctype html><title>No access</title><p>You do not have access to the shop.</p>');
     }),
     api: guard((_req, _res, status) => {
-      throw new HttpError(status, status === 401 ? 'Login required' : 'No access to this unit');
+      const detail = {
+        401: 'Login required',
+        403: 'No access to this unit',
+        503: 'Login cannot be checked now',
+      };
+      throw new HttpError(status, detail[status]);
     }),
   };
 }
