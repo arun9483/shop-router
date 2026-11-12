@@ -64,6 +64,9 @@ token=$(curl -sk https://shop.test:8443/realms/shop/protocol/openid-connect/toke
 curl -k -H "Authorization: Bearer $token" https://shop.test/health/units
 ```
 
+ESLint refuses Keycloak's endpoints and claim names anywhere but `src/auth/idp/keycloak.ts`, as in every
+repository (ADR 0004).
+
 ## Deploy
 
 `.github/workflows/deploy-staging.yml` deploys the router to staging on Cloud Run: on every push to `main`
