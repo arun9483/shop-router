@@ -27,6 +27,10 @@ export interface FesGateOptions {
 
 type GateAnswer = { status: 200; me: unknown } | { status: 401 | 403 };
 
+function escapeHtml(text: string): string {
+  return text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+}
+
 /** Where a page goes to log in, coming back to the same address. */
 export function loginUrl(req: Request): string {
   return `/auth/login?returnTo=${encodeURIComponent(req.originalUrl)}`;
@@ -130,12 +134,14 @@ export function fesGate({
         return;
       }
       if (status === 503) {
+        // A link back to the same address, so the user can try again once login can be checked.
         res
           .status(503)
           .type('html')
           .send(
             '<!doctype html><title>Try again shortly</title>' +
-              '<p>Login cannot be checked right now. Try again shortly.</p>',
+              '<p>Login cannot be checked right now. Try again shortly.</p>' +
+              `<p><a href="${escapeHtml(req.originalUrl)}">Try again</a></p>`,
           );
         return;
       }
