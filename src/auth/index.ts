@@ -44,7 +44,14 @@ export {
   type ServiceCaller,
   type ServiceOptions,
 } from './service.js';
-export { fesGate, loginUrl, userBearer, type FesGateOptions } from './fes.js';
+export {
+  fesGate,
+  loginUrl,
+  resumeUrl,
+  tryAgainPage,
+  userBearer,
+  type FesGateOptions,
+} from './fes.js';
 
 import type { OidcSettings } from './config.js';
 import type { IdpAdapter } from './idp/adapter.js';

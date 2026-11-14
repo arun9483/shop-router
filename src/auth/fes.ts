@@ -36,6 +36,31 @@ export function loginUrl(req: Request): string {
   return `/auth/login?returnTo=${encodeURIComponent(req.originalUrl)}`;
 }
 
+/**
+ * Where a page without a valid token goes first (MVP-2 verification, F9): the Shell FES's
+ * `/auth/resume` refreshes the login with the refresh token, which only `/auth/*` receives, and comes
+ * back to the same address; without a usable refresh token it goes on to log in.
+ */
+export function resumeUrl(req: Request): string {
+  return `/auth/resume?returnTo=${encodeURIComponent(req.originalUrl)}`;
+}
+
+/**
+ * The plain HTML `503` a page gets when login cannot be checked (F6): a link back to `href`, the
+ * shop page the user asked for, so they can try again; it does not reload by itself.
+ */
+export function tryAgainPage(res: Response, href: string): void {
+  res
+    .status(503)
+    .set('Cache-Control', 'no-store')
+    .type('html')
+    .send(
+      '<!doctype html><title>Try again shortly</title>' +
+        '<p>Login cannot be checked right now. Try again shortly.</p>' +
+        `<p><a href="${escapeHtml(href)}">Try again</a></p>`,
+    );
+}
+
 /** The lightweight access token for this request's backend calls; set by the gate. */
 export function userBearer(res: Response): Record<string, string> {
   const token = res.locals.accessToken as string | undefined;
@@ -46,8 +71,8 @@ export function userBearer(res: Response): Record<string, string> {
  * For an FES: `shop_at` must hold a lightweight access token issued to the login client. Checked
  * locally, then the gate asks this unit's backend's `/me` with it, reused per session for
  * `cacheMs`: `200` lets the request through, `401` and `403` are passed back, and a backend or IdP
- * that cannot answer is `503`. Pages without a valid token are sent to log in; API calls get `401`
- * problem+json, so the client can refresh.
+ * that cannot answer is `503`. Pages without a valid token are sent to `/auth/resume` (refresh, else
+ * log in); API calls get `401` problem+json, so the client can refresh.
  */
 export function fesGate({
   idp,
@@ -130,19 +155,11 @@ export function fesGate({
   return {
     page: guard((req, res, status) => {
       if (status === 401) {
-        res.redirect(302, loginUrl(req));
+        res.redirect(302, resumeUrl(req));
         return;
       }
       if (status === 503) {
-        // A link back to the same address, so the user can try again once login can be checked.
-        res
-          .status(503)
-          .type('html')
-          .send(
-            '<!doctype html><title>Try again shortly</title>' +
-              '<p>Login cannot be checked right now. Try again shortly.</p>' +
-              `<p><a href="${escapeHtml(req.originalUrl)}">Try again</a></p>`,
-          );
+        tryAgainPage(res, req.originalUrl);
         return;
       }
       res
