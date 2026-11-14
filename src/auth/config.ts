@@ -1,6 +1,6 @@
 /** How a server reaches the shop's identity provider (IdP). See MVP-2 in arun-mfe-platform. */
 export interface OidcSettings {
-  /** The issuer every token carries, e.g. `https://shop.test:8443/realms/shop`. */
+  /** The issuer every token carries, e.g. `https://idp.test/realms/shop`. */
   issuer: string;
   /** Where this server reaches the IdP, e.g. `http://keycloak:8080/realms/shop` inside Docker. */
   internalUrl: string;

@@ -59,7 +59,7 @@ With `HEALTH_UNITS_AUTH=true`, `/health/units*` and `/version/units*` need a ser
 `OIDC_ISSUER_URL` and `OIDC_INTERNAL_URL`; `src/auth/` is the same code as every unit's `server-common`.
 
 ```sh
-token=$(curl -sk https://shop.test:8443/realms/shop/protocol/openid-connect/token \
+token=$(curl -sk https://idp.test/realms/shop/protocol/openid-connect/token \
   -d grant_type=client_credentials -d client_id=shop-ops -d client_secret="$SHOP_OPS_SECRET" | jq -r .access_token)
 curl -k -H "Authorization: Bearer $token" https://shop.test/health/units
 ```
