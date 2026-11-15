@@ -1,15 +1,6 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { problemHandler, type VersionInfo } from '@arun-dev/server/http';
 import { Router, type RequestHandler, type Response, type Router as ExpressRouter } from 'express';
-import { problemHandler } from './problem.js';
 import type { Route } from './app.js';
-
-export interface VersionInfo {
-  name: string;
-  version: string;
-  commit: string;
-  buildTime: string;
-}
 
 export interface HealthOptions {
   version: VersionInfo;
@@ -22,15 +13,6 @@ export interface HealthOptions {
    * `/version/units*`. The router's own health and version stay public.
    */
   unitsGuard?: RequestHandler;
-}
-
-/** Reads the `version.json` that `scripts/write-version.mjs` puts next to the compiled output. */
-export function readVersion(dir: string): VersionInfo {
-  try {
-    return JSON.parse(readFileSync(join(dir, 'version.json'), 'utf8')) as VersionInfo;
-  } catch {
-    return { name: 'unknown', version: '0.0.0', commit: 'unknown', buildTime: 'unknown' };
-  }
 }
 
 /** Reuses `load`'s result for `ms`; callers during a load share it. */

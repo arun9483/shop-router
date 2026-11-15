@@ -1,11 +1,10 @@
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { HttpError, readVersion } from '@arun-dev/server/http';
 import express, { type RequestHandler } from 'express';
 import request from 'supertest';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { createApp } from './app.js';
-import { readVersion } from './health.js';
-import { HttpError } from './problem.js';
 
 vi.mock('newrelic', () => ({ default: { setTransactionName: vi.fn() } }));
 
