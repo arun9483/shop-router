@@ -1,7 +1,6 @@
+import { connectIdp, oidcSettingsFromEnv, requireService } from '@arun-dev/server/auth';
+import { closeOnSignal, readVersion } from '@arun-dev/server/http';
 import { createApp, mfeRoutes } from './app.js';
-import { connectIdp, oidcSettingsFromEnv, requireService } from './auth/index.js';
-import { readVersion } from './health.js';
-import { closeOnSignal } from './shutdown.js';
 
 const port = Number(process.env.PORT ?? 3000);
 const shellUrl = process.env.SHELL_URL ?? 'http://localhost:3001';

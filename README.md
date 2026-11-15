@@ -56,7 +56,9 @@ With `HEALTH_UNITS_AUTH=true`, `/health/units*` and `/version/units*` need a ser
 `shop-router` in `aud` and the `ops` role, which `keycloak/grants.yaml` grants to the operator's caller
 `shop-ops`: `401` without a valid one, `403` without the role, as problem+json. The router's own
 `/health/live`, `/health/ready` and `/version` stay public. Off by default, and off on staging. It needs
-`OIDC_ISSUER_URL` and `OIDC_INTERNAL_URL`; `src/auth/` is the same code as every unit's `server-common`.
+`OIDC_ISSUER_URL` and `OIDC_INTERNAL_URL`. The checks come from `@arun-dev/server/auth`
+([arun-web-foundation](https://github.com/arun9483/arun-web-foundation)), as do tracing, problem+json and
+graceful shutdown (`@arun-dev/server/http`).
 
 ```sh
 token=$(curl -sk https://idp.test/realms/shop/protocol/openid-connect/token \
@@ -64,8 +66,8 @@ token=$(curl -sk https://idp.test/realms/shop/protocol/openid-connect/token \
 curl -k -H "Authorization: Bearer $token" https://shop.test/health/units
 ```
 
-ESLint refuses Keycloak's endpoints and claim names anywhere but `src/auth/idp/keycloak.ts`, as in every
-repository (ADR 0004).
+ESLint refuses Keycloak's endpoints and claim names in this repository: only `@arun-dev/server/auth/keycloak`
+knows Keycloak (ADR 0004).
 
 ## Deploy
 
