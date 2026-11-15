@@ -1,6 +1,6 @@
-# The router's settings in the shop's identity provider (Keycloak realm `shop`), applied by
+# The router's settings in the tenant's identity provider (Keycloak realm OIDC_REALM, default shop), applied by
 # shop-mfe-platform's settings importer (keycloak-config-cli).
-realm: shop
+realm: $(env:OIDC_REALM)
 
 clients:
   # The audience of operator tokens and the holder of the ops role. Never signs anyone in.
