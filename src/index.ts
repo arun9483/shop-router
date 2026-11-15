@@ -1,4 +1,5 @@
 import { connectIdp, oidcSettingsFromEnv, requireService } from '@arun-dev/server/auth';
+import { keycloakAdapter } from '@arun-dev/server/auth/keycloak';
 import { closeOnSignal, readVersion } from '@arun-dev/server/http';
 import { createApp, mfeRoutes } from './app.js';
 
@@ -7,7 +8,8 @@ const shellUrl = process.env.SHELL_URL ?? 'http://localhost:3001';
 const mfes = mfeRoutes(process.env);
 
 // MVP-2: with HEALTH_UNITS_AUTH=true, /health/units* and /version/units* need a service access token
-// with shop-router in aud and the ops role (shop-ops has it). Off by default, as in MVP-1.
+// with HEALTH_UNITS_AUDIENCE (default shop-router) in aud and the HEALTH_UNITS_ROLE role (default ops,
+// which shop-ops holds). Off by default, as in MVP-1.
 function unitsGuard() {
   if (process.env.HEALTH_UNITS_AUTH !== 'true') return undefined;
   const settings = oidcSettingsFromEnv(
@@ -15,7 +17,11 @@ function unitsGuard() {
     { withClient: false },
   );
   if (!settings) return undefined;
-  return requireService({ ...connectIdp(settings), audience: 'shop-router', role: 'ops' });
+  return requireService({
+    ...connectIdp(settings, { keycloak: keycloakAdapter }),
+    audience: process.env.HEALTH_UNITS_AUDIENCE ?? 'shop-router',
+    role: process.env.HEALTH_UNITS_ROLE ?? 'ops',
+  });
 }
 
 const guard = unitsGuard();

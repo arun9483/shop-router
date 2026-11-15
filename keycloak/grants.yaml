@@ -1,6 +1,6 @@
 # The ops role granted to the operator's caller, defined in shop-mfe-platform. Applied after every
 # repository's own file, once that service account exists.
-realm: shop
+realm: $(env:OIDC_REALM)
 
 users:
   - username: service-account-shop-ops
