@@ -18,7 +18,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@arun-dev/server": "0.2.0",
+    "@arun-dev/server": "1.0.0",
     "express": "5.3.0",
     "http-proxy-middleware": "4.2.0",
     "jose": "6.2.17",

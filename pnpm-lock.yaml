@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@arun-dev/server':
-        specifier: 0.2.0
-        version: 0.2.0(express@5.3.0)(jose@6.2.17)(newrelic@14.8.0)(openid-client@6.8.9)
+        specifier: 1.0.0
+        version: 1.0.0(express@5.3.0)(jose@6.2.17)(newrelic@14.8.0)(openid-client@6.8.9)
       express:
         specifier: 5.3.0
         version: 5.3.0
@@ -76,8 +76,8 @@ packages:
   '@apm-js-collab/tracing-hooks@0.13.3':
     resolution: {integrity: sha512-l/ScKzA7sg1hZKc3QMtbnA3blVkTteN3Yq97AejfFrEiR0S0lay3KmyJJ44p45EEVIGP85fLfki4a6OD/7Jb8w==}
 
-  '@arun-dev/server@0.2.0':
-    resolution: {integrity: sha512-jR8bTEi5XIBvRCtMKMipsoeERlk8YvyXTPNutNad2zVIBuSnyowyPbnCulu0EiPLFO+FnwUVmC7REdLcGSSCgA==}
+  '@arun-dev/server@1.0.0':
+    resolution: {integrity: sha512-P487jdJxwSkBc3IEKz7IxmZ7HMcLRTrnNlJvkScbScrSP91C34D1taQ3JHWDDl5ontIJNe5nfK0L00j5I8EJ/Q==}
     engines: {node: '>=24.22.1'}
     hasBin: true
     peerDependencies:
@@ -1974,7 +1974,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@arun-dev/server@0.2.0(express@5.3.0)(jose@6.2.17)(newrelic@14.8.0)(openid-client@6.8.9)':
+  '@arun-dev/server@1.0.0(express@5.3.0)(jose@6.2.17)(newrelic@14.8.0)(openid-client@6.8.9)':
     dependencies:
       express: 5.3.0
       jose: 6.2.17
